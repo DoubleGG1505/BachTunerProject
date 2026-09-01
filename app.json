@@ -4,7 +4,7 @@
     "slug": "BachTuner",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/download_1024x1024.jpg",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
