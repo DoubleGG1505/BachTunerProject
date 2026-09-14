@@ -1,29 +1,49 @@
-import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Home from "../screens/Home";
 import Login from "../screens/Login";
 import TabNavigator from "./TabsNavigator";
-import MyStrings from "../screens/MyStrings";
+import { useAppTheme } from "../context/ThemeContext";
 
-export type RootStackParamList={
-Home:undefined,
-Login:undefined,
-MyStrings:undefined,
-UserTabs:undefined
+export type RootStackParamList = {
+    Home: undefined,
+    Login: undefined,
+    MyStrings: undefined,
+    UserTabs: undefined
 }
 
-const Stack=createNativeStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
-export default function StackNavigator(){
-return(
 
-<Stack.Navigator initialRouteName="Login">
-<Stack.Screen name='Login' component={Login} options={{title:'Login'}} />
-<Stack.Screen name='Home' component={Home} options={{title:'Inicio'}} />
-<Stack.Screen name='UserTabs' component={TabNavigator} />
+export default function StackNavigsator() {
+    const { theme } = useAppTheme();
 
-</Stack.Navigator>
+    return (
 
-);
+        <Stack.Navigator
+            initialRouteName="Login"
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: theme.card,
+                },
+                headerTintColor: theme.title,
+                headerTitleStyle: {
+                    color: theme.title,
+                },
+                headerShadowVisible: true,
+
+                contentStyle: {
+                    backgroundColor: theme.background,
+                },
+            }}
+        >
+
+
+            <Stack.Screen name='Login' component={Login} options={{ title: 'Login' }} />
+            <Stack.Screen name='Home' component={Home} options={{ title: 'Inicio' }} />
+            <Stack.Screen name='UserTabs' component={TabNavigator} />
+
+        </Stack.Navigator>
+
+    );
 
 }

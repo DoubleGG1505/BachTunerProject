@@ -3,14 +3,14 @@ import { useState } from "react";
 import CustomButton from "../components/CustomButton";
 import CustomInput from "../components/CustomInput";
 import CustomCheckbox from "../components/CustomCheckbox";
-import { CustomBackground, AppColors } from "../components/CustomBackground";
+import { useAppTheme } from "../context/ThemeContext";
 
 export default function Login({ navigation }: any) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [emailInvalid, setEmailInvalid] = useState("");
     const [passwordInvalid, setPasswordInvalid] = useState("");
-    
+    const {theme} = useAppTheme();
 
    const handleLogin = () => {
     setEmailInvalid("");
@@ -57,9 +57,9 @@ export default function Login({ navigation }: any) {
 };
 
     return (
-       <CustomBackground style={styles.container}>
-            <Text style={styles.title}>Welcome To BachTuner</Text>
-            <Text style={styles.subtitle}>Login to continue</Text>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <Text style={[styles.title,{color:theme.title}]}>Welcome To BachTuner</Text>
+            <Text style={[styles.subtitle,{color:theme.subtitle}]}>Login to continue</Text>
             <View style={styles.form}>
 
                 <CustomInput
@@ -68,7 +68,7 @@ export default function Login({ navigation }: any) {
                     OnChangeText={handleEmailChange}
                     type="email" />
 
-                {emailInvalid ? <Text style={styles.errorText}>{emailInvalid}</Text> : null}
+                {emailInvalid ? <Text style={[styles.subtitle,{color:theme.error}]}>{emailInvalid}</Text> : null}
                 
 
                 <CustomInput
@@ -76,46 +76,37 @@ export default function Login({ navigation }: any) {
                     placeholder="********"
                     OnChangeText={handlePasswordChange}
                     type="password" />
-{passwordInvalid ? <Text style={styles.errorText}>{passwordInvalid}</Text> : null}
+{passwordInvalid ? <Text style={[styles.subtitle,{color:theme.error}]}>{passwordInvalid}</Text> : null}
 
                 <CustomButton
                     title="Login"
                     onPress={() => handleLogin()}
                 />
             </View>
-        </CustomBackground>
-    )
+        </View>
+    );
 }
-
 const styles = StyleSheet.create({
-    container: {
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 24,
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: "700",
-        color: AppColors.darkText,
-        marginBottom: 8,
-        textAlign: "center",
-    },
-    subtitle: {
-        fontSize: 14,
-        color: AppColors.primary,
-        marginBottom: 28,
-        textAlign: "center",
-    },
-    form: {
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+    gap: 12,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginVertical: 6,
+  },
+  form: {
         width: "100%",
         alignItems: "center",
         gap: 8,
     },
-    errorText: {
-        fontSize: 14,
-        color: AppColors.error,
-        fontWeight: "bold",
-        marginBottom: 10,
-        textAlign: "center",
-    }
-})
+});

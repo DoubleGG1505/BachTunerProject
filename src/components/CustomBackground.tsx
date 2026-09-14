@@ -4,14 +4,14 @@ import { StyleSheet, View, SafeAreaView, ViewProps } from 'react-native';
 
 interface CustomBackgroundProps extends ViewProps {
   children: React.ReactNode;
-  useSafeArea?: boolean; // Por si necesitas soporte para notch/isla dinámica
+  useSafeArea?: boolean; 
 }
 
 export const AppColors={
     background: '#F8F4E1',  // Crema claro (Fondo general de la app)
   secondary:  '#AF8F6F',  // Tono arena/bronce (Bordes de inputs, placeholders, acentos)
-  primary:    '#74512D',  // Café medio (Botones principales, subtítulos destacados)
-  darkText:   '#543310',  // Café oscuro (Títulos principales, íconos y texto legible)
+  primary:    '#74512D',  // Cafe medio (Botones principales, subtitulos destacados)
+  darkText:   '#543310',  // Cafe oscuro (Titulos principales, iconos y texto legible)
   error:      '#C0392B',
 } 
 

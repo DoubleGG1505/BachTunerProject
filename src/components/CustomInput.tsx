@@ -1,7 +1,7 @@
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useState } from 'react';
-import { StyleSheet, TextInput, View, Text ,TouchableOpacity} from 'react-native';
-import { CustomBackground,AppColors } from './CustomBackground';
+import { StyleSheet, TextInput, View ,TouchableOpacity,KeyboardTypeOptions} from 'react-native';
+import {useAppTheme} from '../context/ThemeContext';
 
 type CustomInputProps = {
     values: string;
@@ -11,20 +11,26 @@ type CustomInputProps = {
 };
 
 
-export default function CustomInput({ values, placeholder, OnChangeText, type }: CustomInputProps) {
+export default function CustomInput({ values, placeholder, OnChangeText, type="text" }: CustomInputProps) {
     const [showPassword, setShowPassword] = useState(false);
-    const KeyboardType =
+    const KeyboardType : KeyboardTypeOptions=
         type === 'email' ? 'email-address' : type === 'number' ? 'numeric' : 'default';
     const iconName = type === 'email' ? 'mail-outline' : type === 'password' ? 'lock-closed-outline' : type === 'number' ? 'keypad-outline' : 'person-outline';
-
+    const theme = useAppTheme();
 
     return (
-        <View style={styles.inputContainer}>
-            <Ionicons name={iconName} size={20} color={AppColors.darkText} />
-            <TextInput
-            style={styles.input}
+        <View style={[styles.inputContainer,{backgroundColor:theme.theme.card,borderColor:theme.theme.border}]}>
+         <Ionicons name={iconName} size={20} color={theme.theme.subtitle} /> 
+
+           <TextInput
+            style={[
+          styles.input,
+          {
+            color: theme.theme.subtitle,
+          },
+        ]}
                 value={values}
-                placeholderTextColor={AppColors.secondary}
+                placeholderTextColor={useAppTheme().theme.subtitle}
                 placeholder={placeholder}
                 onChangeText={text => OnChangeText(text)}
                 keyboardType={KeyboardType}
@@ -48,8 +54,6 @@ const styles = StyleSheet.create({
     inputContainer: {
         height: 40,
         width: 260,
-        backgroundColor:"#FFFFFF",
-        borderColor: AppColors.secondary,
         borderWidth: 1,
         borderRadius:8,
         marginBottom: 12,
@@ -65,4 +69,6 @@ const styles = StyleSheet.create({
   },
 
 });
+
+
 
