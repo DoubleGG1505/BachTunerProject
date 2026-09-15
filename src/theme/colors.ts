@@ -8,6 +8,7 @@ export const lightColors = {
   primary: '#74512D',
   accent: '#AF8F6F',
   error: '#C0392B',
+  button:'#74512D'
 };
 
 export const darkColors = {
@@ -20,6 +21,7 @@ export const darkColors = {
   primary: '#AF8F6F',
   accent: '#74512D',
   error: '#E74C3C',
+  button:'#74512D'
 };
 
 export type ThemeColors = typeof lightColors | typeof darkColors;

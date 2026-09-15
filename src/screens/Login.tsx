@@ -4,6 +4,9 @@ import CustomButton from "../components/CustomButton";
 import CustomInput from "../components/CustomInput";
 import CustomCheckbox from "../components/CustomCheckbox";
 import { useAppTheme } from "../context/ThemeContext";
+import {useDispatch} from "react-redux";
+import {loginUser} from "../store/slices/userSlice";
+
 
 export default function Login({ navigation }: any) {
     const [email, setEmail] = useState("");
@@ -11,6 +14,7 @@ export default function Login({ navigation }: any) {
     const [emailInvalid, setEmailInvalid] = useState("");
     const [passwordInvalid, setPasswordInvalid] = useState("");
     const {theme} = useAppTheme();
+    const dispatch = useDispatch();
 
    const handleLogin = () => {
     setEmailInvalid("");
@@ -32,6 +36,9 @@ export default function Login({ navigation }: any) {
     }
 
     if (!hasError) {
+
+dispatch(loginUser({name: "Violinista", lastName:"",email:email}));
+
         navigation.navigate('UserTabs', { screen: 'Home' });
     }
 };
