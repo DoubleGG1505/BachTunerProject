@@ -10,10 +10,11 @@ type CustomInputProps = {
   type?: 'text' | 'email' | 'password' | 'number';
   hideicon?: boolean;
   editable?: boolean;
+  multiline?: boolean;
 };
 
 
-export default function CustomInput({ values, placeholder, OnChangeText, type = "text", hideicon = false, editable = true }: CustomInputProps) {
+export default function CustomInput({ values, placeholder, OnChangeText, type = "text", hideicon = false, editable = true ,multiline=false}: CustomInputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const KeyboardType: KeyboardTypeOptions =
     type === 'email' ? 'email-address' : type === 'number' ? 'numeric' : 'default';
@@ -23,21 +24,23 @@ export default function CustomInput({ values, placeholder, OnChangeText, type = 
 
   return (
     <View style={[styles.inputContainer, { backgroundColor: theme.theme.card, borderColor: theme.theme.border },
-      !editable && { opacity: 0.7 }
+      !editable && { opacity: 0.7 },
+      multiline && { height: 100, alignItems: 'flex-start', paddingTop: 12 }
 
     ]}>
 
-{!hideicon && <Ionicons name={iconName} size={20} color={theme.theme.subtitle} />}
+{!hideicon && (
+        <Ionicons name={iconName} size={20} color={theme.theme.subtitle} style={{ marginTop: multiline ? 2 : 0 }} />
+      )}
 
- {//     <Ionicons name={iconName} size={20} color={theme.theme.subtitle} />
-}
+
       <TextInput
         style={[
           styles.input,
           {
             color: theme.theme.subtitle,
-            marginLeft: hideicon ? 0 : 8,
-          },
+            marginLeft: hideicon ? 0 : 8},
+            multiline && { textAlignVertical: 'top', height: '100%' }
         ]}
         value={values}
         placeholderTextColor={useAppTheme().theme.subtitle}
