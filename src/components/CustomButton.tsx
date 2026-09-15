@@ -19,7 +19,6 @@ export default function CustomButton({
     const { theme } = useAppTheme();
     const isOutline = variant === 'outline';
 
-    // Asignación de colores según la variante
     let buttonColor = theme.primary; 
     if (variant === 'save') buttonColor = theme.error; 
     if (variant === 'danger') buttonColor = '#FED24F'; 
