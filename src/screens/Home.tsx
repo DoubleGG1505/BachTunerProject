@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
+import { Text, View, StyleSheet, TouchableOpacity,ScrollView } from "react-native";
 import CustomButton from "../components/CustomButton";
 import { useAppTheme } from "../context/ThemeContext";
 import MetronomeModal from "../components/MetronomeModal";
@@ -76,8 +76,11 @@ export default function Home({ navigation }: any) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      
+    <ScrollView 
+      style={{ flex: 1, backgroundColor: theme.background }} 
+      contentContainerStyle={styles.scrollContainer}
+      showsVerticalScrollIndicator={false}
+    > 
       <View style={[styles.modeToggleBar, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <TouchableOpacity
           style={[styles.modeTab, tunerMode === 'violin' && { backgroundColor: theme.primary }]}
@@ -306,7 +309,7 @@ export default function Home({ navigation }: any) {
         visible={isMetronomeVisible} 
         onClose={() => setIsMetronomeVisible(false)} 
       />
-    </View>
+    </ScrollView>
   );
 }
 
