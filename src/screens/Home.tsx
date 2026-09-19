@@ -516,4 +516,9 @@ const styles = StyleSheet.create({
     width: "100%",
     marginTop: "auto",
   },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 20,
+    paddingTop: 36,
+  },
 });
