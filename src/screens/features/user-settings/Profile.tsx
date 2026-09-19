@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../store';
 import { updateProfile, logoutUser } from '../../.././store/slices/userSlice';
+import {clearInventory} from '../../../store/slices/stringsSlice'
 
 export default function Profile({ navigation }: any) {
   const { theme, mode, toggleTheme } = useAppTheme();
@@ -36,6 +37,7 @@ export default function Profile({ navigation }: any) {
 
   const handleLogout = () => {
     dispatch(logoutUser());
+    dispatch(clearInventory());
 
     navigation.reset({
       index: 0,
