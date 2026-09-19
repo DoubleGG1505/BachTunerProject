@@ -1,8 +1,11 @@
-import React, { useState } from "react";
-import { Text, View, StyleSheet, TouchableOpacity,ScrollView } from "react-native";
+import React, { useState, useEffect } from "react";
+import { Text, View, StyleSheet, TouchableOpacity, ScrollView, PermissionsAndroid, Alert } from "react-native";
 import CustomButton from "../components/CustomButton";
 import { useAppTheme } from "../context/ThemeContext";
 import MetronomeModal from "../components/MetronomeModal";
+import LiveAudioStream from 'react-native-live-audio-stream'
+import { decodeBase64ToInt16, detectPitch } from "../utils/audioProcessor";
+import Ionicons from "@react-native-vector-icons/ionicons";
 
 type ViolinStringTarget = {
   name: string;
@@ -27,10 +30,65 @@ export default function Home({ navigation }: any) {
   const [tunerMode, setTunerMode] = useState<'violin' | 'chromatic'>('violin');
   const [selectedViolinString, setSelectedViolinString] = useState<ViolinStringTarget>(VIOLIN_STRINGS[2]);
   const [currentFreq, setCurrentFreq] = useState<number>(440.00);
+  const [isListening, setIsListening] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      LiveAudioStream.stop();
+    };
+  }, []);
+
+  const toggleListening = async () => {
+    if (isListening) {
+      LiveAudioStream.stop();
+      setIsListening(false);
+    } else {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          {
+            title: "Permiso de Micrófono",
+            message: "BachTuner necesita acceso al microfono para afinar tu violín.",
+            buttonNeutral: "Preguntar Luego",
+            buttonNegative: "Cancelar",
+            buttonPositive: "OK"
+          }
+        );
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          const options = {
+            sampleRate: 44100,
+            channels: 1,
+            bitsPerSample: 16,
+            audioSource: 6,
+            bufferSize: 4096,
+            wavFile: 'tuner_temp.wav'
+          };
+          
+          LiveAudioStream.init(options);
+          
+          LiveAudioStream.on('data', (data) => {
+            const pcmData = decodeBase64ToInt16(data);
+            const detectedHz = detectPitch(pcmData, 44100);
+
+            if (detectedHz > 0) {
+              setCurrentFreq(prev => (prev * 0.4) + (detectedHz * 0.6));
+            }
+          });
+
+          LiveAudioStream.start();
+          setIsListening(true);
+        } else {
+          Alert.alert("Permiso Denegado", "No es posible afinar sin acceso al micrófono.");
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    }
+  };
 
   const getChromaticData = (freq: number) => {
     if (freq <= 0) return { note: '--', octave: 0, cents: 0, targetFreq: 0 };
-    
+
     const midiNumber = 12 * (Math.log2(freq / 440)) + 69;
     const roundedMidi = Math.round(midiNumber);
     const noteIndex = ((roundedMidi % 12) + 12) % 12;
@@ -55,6 +113,7 @@ export default function Home({ navigation }: any) {
 
   const activeCents = tunerMode === 'violin' ? boundedViolinCents : chromaticInfo.cents;
   const isTuned = Math.abs(activeCents) <= 3;
+
   const needleTranslation = Math.max(-110, Math.min(110, activeCents * 2.2));
   const needlePosition = needleTranslation;
 
@@ -70,17 +129,12 @@ export default function Home({ navigation }: any) {
     return activeCents < 0 ? 'Apretar (Subir ↑)' : 'Aflojar (Bajar ↓)';
   };
 
-  const getStatusText = () => {
-    if (isTuned) return "¡Afinado!";
-    return activeCents < 0 ? "Apretar clavija (Subir ↑)" : "Aflojar clavija (Bajar ↓)";
-  };
-
   return (
-    <ScrollView 
-      style={{ flex: 1, backgroundColor: theme.background }} 
+    <ScrollView
+      style={{ flex: 1, backgroundColor: theme.background }}
       contentContainerStyle={styles.scrollContainer}
       showsVerticalScrollIndicator={false}
-    > 
+    >
       <View style={[styles.modeToggleBar, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <TouchableOpacity
           style={[styles.modeTab, tunerMode === 'violin' && { backgroundColor: theme.primary }]}
@@ -117,6 +171,18 @@ export default function Home({ navigation }: any) {
       </View>
 
       <View style={[styles.gaugeContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+
+        <TouchableOpacity 
+          style={[styles.micButton, { backgroundColor: isListening ? '#E74C3C' : theme.primary }]} 
+          onPress={toggleListening}
+          activeOpacity={0.8}
+        >
+          <Ionicons name={isListening ? "mic" : "mic-off"} size={20} color="#FFF" />
+          <Text style={styles.micButtonText}>
+            {isListening ? "Detener Afinador" : "Activar Afinador"}
+          </Text>
+        </TouchableOpacity>
+
         {tunerMode === 'chromatic' && (
           <View style={styles.centerReadout}>
             <View style={styles.chromaticNoteRow}>
@@ -132,10 +198,10 @@ export default function Home({ navigation }: any) {
             </Text>
           </View>
         )}
-        
+
         {tunerMode === 'violin' && (
           <View style={styles.centerReadout}>
-             <Text style={[styles.hzSubtext, { color: theme.subtitle, marginBottom: 12 }]}>
+            <Text style={[styles.hzSubtext, { color: theme.subtitle, marginBottom: 12 }]}>
               {currentFreq.toFixed(2)} Hz
             </Text>
           </View>
@@ -149,25 +215,25 @@ export default function Home({ navigation }: any) {
 
         <View style={[styles.centerGuide, { backgroundColor: isTuned ? "#27AE60" : theme.border }]} />
 
-        <View 
+        <View
           style={[
-            styles.needle, 
-            { 
+            styles.needle,
+            {
               transform: [{ translateX: needlePosition }],
               backgroundColor: isTuned ? "#27AE60" : theme.error
             }
-          ]} 
+          ]}
         />
 
         <View style={[styles.statusPill, { backgroundColor: isTuned ? "#E8F5E9" : theme.background, borderColor: isTuned ? "#27AE60" : theme.border }]}>
           <Text style={[styles.statusText, { color: isTuned ? "#2E7D32" : theme.title }]}>
-            {getStatusText()} ({activeCents > 0 ? `+${activeCents}` : activeCents} cents)
+            {getTuningGuidance()} ({activeCents > 0 ? `+${activeCents}` : activeCents} cents)
           </Text>
         </View>
 
         <View style={styles.tuningSimRow}>
-          <TouchableOpacity 
-            style={[styles.simBtn, { backgroundColor: theme.background }]} 
+          <TouchableOpacity
+            style={[styles.simBtn, { backgroundColor: theme.background }]}
             onPress={() => {
               setCentsOffset((prev) => Math.max(-45, prev - 5));
               setCurrentFreq((f) => Number((f - 1.5).toFixed(2)));
@@ -176,8 +242,8 @@ export default function Home({ navigation }: any) {
             <Text style={{ color: theme.title, fontWeight: "bold" }}>-1.5 Hz</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.simBtn, { backgroundColor: "#E8F5E9" }]} 
+          <TouchableOpacity
+            style={[styles.simBtn, { backgroundColor: "#E8F5E9" }]}
             onPress={() => {
               setCentsOffset(0);
               setCurrentFreq(tunerMode === 'violin' ? selectedString.frequency : chromaticInfo.targetFreq);
@@ -186,8 +252,8 @@ export default function Home({ navigation }: any) {
             <Text style={{ color: "#2E7D32", fontWeight: "bold" }}>Afinar (0)</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={[styles.simBtn, { backgroundColor: theme.background }]} 
+          <TouchableOpacity
+            style={[styles.simBtn, { backgroundColor: theme.background }]}
             onPress={() => {
               setCentsOffset((prev) => Math.min(45, prev + 5));
               setCurrentFreq((f) => Number((f + 1.5).toFixed(2)));
@@ -197,16 +263,16 @@ export default function Home({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </View>
-      
+
       {tunerMode === 'violin' ? (
         <View style={[styles.pegboxCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <Text style={[styles.pegboxTitle, { color: theme.subtitle }]}>Toca una clavija para afinar</Text>
 
           <View style={styles.pegboxLayout}>
             <View style={styles.pegColumn}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.pegButton, 
+                  styles.pegButton,
                   selectedString.note === "G3" && { backgroundColor: isTuned ? "#27AE60" : theme.primary }
                 ]}
                 onPress={() => handleViolinStringSelect(VIOLIN_STRINGS[0])}
@@ -214,9 +280,9 @@ export default function Home({ navigation }: any) {
                 <Text style={[styles.pegText, selectedString.note === "G3" && styles.pegTextActive]}>Sol (G)</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.pegButton, 
+                  styles.pegButton,
                   selectedString.note === "D4" && { backgroundColor: isTuned ? "#27AE60" : theme.primary }
                 ]}
                 onPress={() => handleViolinStringSelect(VIOLIN_STRINGS[1])}
@@ -235,9 +301,9 @@ export default function Home({ navigation }: any) {
             </View>
 
             <View style={styles.pegColumn}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.pegButton, 
+                  styles.pegButton,
                   selectedString.note === "A4" && { backgroundColor: isTuned ? "#27AE60" : theme.primary }
                 ]}
                 onPress={() => handleViolinStringSelect(VIOLIN_STRINGS[2])}
@@ -245,9 +311,9 @@ export default function Home({ navigation }: any) {
                 <Text style={[styles.pegText, selectedString.note === "A4" && styles.pegTextActive]}>La (A)</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.pegButton, 
+                  styles.pegButton,
                   selectedString.note === "E5" && { backgroundColor: isTuned ? "#27AE60" : theme.primary }
                 ]}
                 onPress={() => handleViolinStringSelect(VIOLIN_STRINGS[3])}
@@ -305,9 +371,9 @@ export default function Home({ navigation }: any) {
         />
       </View>
 
-      <MetronomeModal 
-        visible={isMetronomeVisible} 
-        onClose={() => setIsMetronomeVisible(false)} 
+      <MetronomeModal
+        visible={isMetronomeVisible}
+        onClose={() => setIsMetronomeVisible(false)}
       />
     </ScrollView>
   );
@@ -319,22 +385,22 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 36,
   },
-  modeToggleBar: { 
-    flexDirection: 'row', 
-    borderRadius: 10, 
-    borderWidth: 1, 
-    padding: 3, 
-    marginBottom: 14, 
+  modeToggleBar: {
+    flexDirection: 'row',
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 3,
+    marginBottom: 14,
   },
-  modeTab: { 
-    flex: 1, 
-    paddingVertical: 8, 
-    borderRadius: 8, 
-    alignItems: 'center', 
+  modeTab: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
   },
-  modeTabText: { 
-    fontSize: 13, 
-    fontWeight: 'bold', 
+  modeTabText: {
+    fontSize: 13,
+    fontWeight: 'bold',
   },
   header: {
     alignItems: "center",
@@ -357,29 +423,29 @@ const styles = StyleSheet.create({
     position: "relative",
     marginBottom: 16,
   },
-  centerReadout: { 
-    alignItems: 'center', 
-    marginBottom: 10, 
+  centerReadout: {
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  chromaticNoteRow: { 
-    flexDirection: 'row', 
-    alignItems: 'flex-end', 
+  chromaticNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
   },
-  mainNoteDisplay: { 
-    fontSize: 52, 
-    fontWeight: '900', 
-    lineHeight: 56, 
+  mainNoteDisplay: {
+    fontSize: 52,
+    fontWeight: '900',
+    lineHeight: 56,
   },
-  octaveNumber: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    marginLeft: 4, 
-    marginBottom: 6, 
+  octaveNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginLeft: 4,
+    marginBottom: 6,
   },
-  hzSubtext: { 
-    fontSize: 13, 
-    fontWeight: '600', 
-    marginTop: 4, 
+  hzSubtext: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 4,
   },
   gaugeScale: {
     flexDirection: "row",
@@ -435,12 +501,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  chromaticScaleCard: { 
-    borderRadius: 14, 
-    borderWidth: 1, 
-    padding: 14, 
-    alignItems: 'center', 
-    marginBottom: 14, 
+  chromaticScaleCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    alignItems: 'center',
+    marginBottom: 14,
   },
   pegboxTitle: {
     fontSize: 12,
@@ -493,24 +559,24 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F4E1",
     opacity: 0.6,
   },
-  chromaticChipsGrid: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
-    justifyContent: 'center', 
-    gap: 8, 
-    width: '100%', 
+  chromaticChipsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
   },
-  chromaChip: { 
-    width: '21%', 
-    height: 36, 
-    borderRadius: 8, 
-    borderWidth: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+  chromaChip: {
+    width: '21%',
+    height: 36,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  chromaChipText: { 
-    fontSize: 13, 
-    fontWeight: 'bold', 
+  chromaChipText: {
+    fontSize: 13,
+    fontWeight: 'bold',
   },
   actionRow: {
     width: "100%",
@@ -520,5 +586,22 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
     paddingTop: 36,
+  },
+  micButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 24,
+    marginBottom: 16,
+    gap: 8,
+    width: '80%',
+    elevation: 3,
+  },
+  micButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
