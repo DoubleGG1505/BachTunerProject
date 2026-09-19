@@ -5,11 +5,13 @@ import Profile from "../screens/features/user-settings/Profile";
 import { Ionicons } from '@expo/vector-icons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useAppTheme } from "../context/ThemeContext";
+import Repertoire from "../screens/features/Repertoire";
 
 export type TabsParamList = {
     Home: undefined,
     MyStrings: undefined,
     Profile: undefined,
+    Repertoire:undefined,
 }
 
 const Tab = createBottomTabNavigator<TabsParamList>();
@@ -36,6 +38,15 @@ export default function TabNavigator() {
                 options={{
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="home" size={size} color={color} />
+                    )
+                }}
+            />
+
+<Tab.Screen
+                name="Repertoire" component={Repertoire}
+                options={{
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="musical-notes" size={size} color={color} />
                     )
                 }}
             />
