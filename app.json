@@ -17,12 +17,25 @@
         "monochromeImage": "./assets/download_1024x1024.jpg"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.doublegg.BachTuner"
+      "package": "com.doublegg.BachTuner",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": {
+            "mimeType": "application/pdf"
+          },
+          "category": [
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/download_1024x1024.jpg"
     },
-    "plugins": [],
+    "plugins": [
+      "expo-sharing"
+    ],
     "extra": {
       "eas": {
         "projectId": "efba9948-a159-40a6-aeae-6ddddda943bd"
