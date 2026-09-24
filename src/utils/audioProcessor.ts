@@ -36,15 +36,29 @@ export function detectPitch(buffer: Int16Array, sampleRate: number): number {
   const minOffset = Math.floor(sampleRate / 1500); 
   const maxOffset = Math.floor(sampleRate / 100);  
 
+const correlations = new Float32Array(maxOffset + 1);
+
   for (let offset = minOffset; offset < maxOffset; offset++) {
     let correlation = 0;
     for (let i = 0; i < buffer.length - offset; i++) {
       correlation += buffer[i] * buffer[i + offset];
     }
+correlations[offset] = correlation;
+
     if (correlation > maxCorrelation) {
       maxCorrelation = correlation;
       bestOffset = offset;
     }
+  }
+
+if (bestOffset > minOffset && bestOffset < maxOffset) {
+    const y1 = correlations[bestOffset - 1];
+    const y2 = correlations[bestOffset];
+    const y3 = correlations[bestOffset + 1];
+
+    const fractionalOffset = bestOffset + (y1 - y3) / (2 * (y1 - 2 * y2 + y3));
+    
+    return sampleRate / fractionalOffset;
   }
 
   if (bestOffset > 0) {

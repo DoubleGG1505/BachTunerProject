@@ -71,7 +71,7 @@ export default function Home({ navigation }: any) {
             const detectedHz = detectPitch(pcmData, 44100);
 
             if (detectedHz > 0) {
-              setCurrentFreq(prev => (prev * 0.4) + (detectedHz * 0.6));
+              setCurrentFreq(prev => (prev * 0.85) + (detectedHz * 0.15));
             }
           });
 

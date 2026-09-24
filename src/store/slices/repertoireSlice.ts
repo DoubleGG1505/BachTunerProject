@@ -9,6 +9,8 @@ export interface SongItem {
   composer: string;
   tutorialUrl?: string;
   notes?: string;
+  pdfUri?: string;
+  pdfName?: string;
 }
 
 interface RepertoireState {
@@ -19,17 +21,17 @@ interface RepertoireState {
 const initialState: RepertoireState = {
   songs: [
     {
-      id: '1',
+      id: '3',
       title: 'Merry Go Round of Life',
       composer: 'Joe Hisaishi',
-      tutorialUrl: 'https://youtu.be/BrOjFXM-1qw?si=hlpl4Nur0VCO9-8P',
+      tutorialUrl: 'https://www.youtube.com/watch?v=BrOjFXM-1qw',
       notes: 'Tocar en Sol menor, cuidar afinación en cuerdas dobles.',
     },
     {
-      id: '2',
+      id: '4',
       title: 'Minuet 1',
       composer: 'J.S. Bach',
-      tutorialUrl: 'https://youtu.be/PO69MCdCzU0?si=fD565f4cA5FwJWXj',
+      tutorialUrl: 'https://www.youtube.com/watch?v=PO69MCdCzU0',
       notes: 'Suzuki Libro 1. Arco suave en las corcheas.',
     },
   ],

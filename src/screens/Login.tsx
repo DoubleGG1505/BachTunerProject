@@ -1,119 +1,159 @@
-import { Text, View, StyleSheet } from "react-native";
+import { Text, View, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from "react-native";
 import { useState } from "react";
 import CustomButton from "../components/CustomButton";
 import CustomInput from "../components/CustomInput";
-import CustomCheckbox from "../components/CustomCheckbox";
 import { useAppTheme } from "../context/ThemeContext";
-import {useDispatch} from "react-redux";
-import {loginUser} from "../store/slices/userSlice";
+import { useDispatch } from "react-redux";
+import { loginUser } from "../store/slices/userSlice";
+import { supabase } from "../lib/supabase";
 
 
 export default function Login({ navigation }: any) {
+    const { theme } = useAppTheme();
+    const dispatch = useDispatch();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [emailInvalid, setEmailInvalid] = useState("");
-    const [passwordInvalid, setPasswordInvalid] = useState("");
-    const {theme} = useAppTheme();
-    const dispatch = useDispatch();
+    const [loading, setLoading] = useState(false);
 
-   const handleLogin = () => {
-    setEmailInvalid("");
-    setPasswordInvalid("");
 
-    let hasError = false;
+    const handleLogin = async () => {
+        const formattedEmail = email.trim().toLowerCase();
 
-    if (email.trim() === "") {
-        setEmailInvalid("El correo es obligatorio.");
-        hasError = true;
-    } else if (!validEmail(email)) {
-        setEmailInvalid("El correo debe terminar en @unitec.edu");
-        hasError = true;
-    }
+        if (!formattedEmail || !password) {
+            Alert.alert('Campos vacios', 'Ingrese su correo y contraseña.');
+            return;
+        }
 
-    if (password.trim() === "") {
-        setPasswordInvalid("La contraseña es obligatoria.");
-        hasError = true;
-    }
+        if (!formattedEmail.includes('@') || !formattedEmail.includes('.com')) {
+            Alert.alert('Formato invalido', 'El  formato del correo es invalido.');
+            return;
+        }
 
-    if (!hasError) {
+        setLoading(true);
 
-dispatch(loginUser({name: "Violinista", lastName:"",email:email}));
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: formattedEmail,
+            password: password,
+        });
 
-        navigation.navigate('UserTabs', { screen: 'Home' });
-    }
-};
+        if (error) {
+            Alert.alert('Acceso Denegado', 'Correo o contraseña incorrectos.');
+            setLoading(false);
+            return;
+        }
 
-    const validEmail = (mail: string) => {
-        const clean = mail.trim().toLowerCase();
-        return clean.endsWith('@unitec.edu');
+        if (data.user) {
+            dispatch(loginUser({
+                name: data.user.user_metadata?.first_name || 'Violinista',
+                lastName: data.user.user_metadata?.last_name || '',
+                email: data.user.email || formattedEmail,
+            }));
+
+            setLoading(false);
+            navigation.replace('UserTabs');
+        }
     };
 
-    const handleEmailChange = (text: string) => {
-        setEmail(text);
+    const navigateToRegister = () => {
+        navigation.navigate('Register');
+    };
 
-        if (validEmail(text)) {
-            setEmailInvalid("");
-        }
-    }
-
-    const handlePasswordChange = (text: string) => {
-    setPassword(text);
-    if (text.trim() !== "") {
-        setPasswordInvalid("");
-    }
-};
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <Text style={[styles.title,{color:theme.title}]}>Welcome To BachTuner</Text>
-            <Text style={[styles.subtitle,{color:theme.subtitle}]}>Login to continue</Text>
-            <View style={styles.form}>
+        <KeyboardAvoidingView
+            style={{ flex: 1, backgroundColor: theme.background }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+            <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+                <View style={styles.header}>
+                    <Text style={[styles.title, { color: theme.title }]}>BachTuner</Text>
+                    <Text style={[styles.subtitle, { color: theme.subtitle }]}>
+                        Inicia sesión para continuar.
+                    </Text>
+                </View>
 
-                <CustomInput
-                    values={email}
-                    placeholder="Ingrese su correo @unitec.edu"
-                    OnChangeText={handleEmailChange}
-                    type="email" />
+                <View style={styles.formContainer}>
+                    <CustomInput
+                        values={email}
+                        placeholder="Correo Electrónico"
+                        OnChangeText={setEmail}
+                        hideicon={true}
+                    />
 
-                {emailInvalid ? <Text style={[styles.subtitle,{color:theme.error}]}>{emailInvalid}</Text> : null}
-                
+                    <CustomInput
+                        values={password}
+                        placeholder="Contraseña"
+                        OnChangeText={setPassword}
+                        hideicon={true}
+                        secureTextEntry={true}
+                    />
 
-                <CustomInput
-                    values={password}
-                    placeholder="********"
-                    OnChangeText={handlePasswordChange}
-                    type="password" />
-{passwordInvalid ? <Text style={[styles.subtitle,{color:theme.error}]}>{passwordInvalid}</Text> : null}
+                    <View style={styles.buttonWrapper}>
+                        {loading ? (
+                            <ActivityIndicator size="large" color={theme.primary} />
+                        ) : (
+                            <CustomButton
+                                title="Entrar"
+                                onPress={handleLogin}
+                            />
+                        )}
+                    </View>
 
-                <CustomButton
-                    title="Login"
-                    onPress={() => handleLogin()}
-                />
-            </View>
-        </View>
+                    <View style={styles.registerPrompt}>
+                        <Text style={[styles.registerText, { color: theme.subtitle }]}>
+                            ¿No tienes cuenta?{' '}
+                        </Text>
+                        <TouchableOpacity onPress={navigateToRegister}>
+                            <Text style={[styles.registerLink, { color: theme.primary }]}>
+                                Regístrate hoy
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 }
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 20,
-    gap: 12,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginVertical: 6,
-  },
-  form: {
-        width: "100%",
-        alignItems: "center",
-        gap: 8,
+    scrollContainer: {
+        flexGrow: 1,
+        paddingHorizontal: 20,
+        justifyContent: 'center',
+        paddingBottom: 40,
+    },
+    header: {
+        alignItems: 'center',
+        marginBottom: 50,
+    },
+    title: {
+        fontSize: 38,
+        fontWeight: '900',
+        marginBottom: 10,
+        letterSpacing: 1,
+    },
+    subtitle: {
+        fontSize: 16,
+    },
+    formContainer: {
+        width: '100%',
+        gap: 15,
+    },
+    buttonWrapper: {
+        marginTop: 10,
+        height: 50,
+        justifyContent: 'center',
+    },
+    registerPrompt: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 20,
+    },
+    registerText: {
+        fontSize: 14,
+    },
+    registerLink: {
+        fontSize: 14,
+        fontWeight: 'bold',
     },
 });

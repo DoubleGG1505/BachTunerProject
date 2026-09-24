@@ -11,6 +11,7 @@ type CustomInputProps = {
   hideicon?: boolean;
   editable?: boolean;
   multiline?: boolean;
+  secureTextEntry?:boolean;
 };
 
 

@@ -12,14 +12,21 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/download_1024x1024.jpg",
+        "backgroundImage": "./assets/download_1024x1024.jpg",
+        "monochromeImage": "./assets/download_1024x1024.jpg"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.doublegg.BachTuner"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/download_1024x1024.jpg"
+    },
+    "plugins": [],
+    "extra": {
+      "eas": {
+        "projectId": "efba9948-a159-40a6-aeae-6ddddda943bd"
+      }
     }
   }
 }

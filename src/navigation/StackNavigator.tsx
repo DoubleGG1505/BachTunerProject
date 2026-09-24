@@ -3,12 +3,14 @@ import Home from "../screens/Home";
 import Login from "../screens/Login";
 import TabNavigator from "./TabsNavigator";
 import { useAppTheme } from "../context/ThemeContext";
+import Register from "../screens/Register";
 
 export type RootStackParamList = {
     Home: undefined,
     Login: undefined,
     MyStrings: undefined,
     UserTabs: undefined
+    Register: undefined
 }
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -40,6 +42,7 @@ export default function StackNavigsator() {
 
             <Stack.Screen name='Login' component={Login} options={{ title: 'Login' }} />
             <Stack.Screen name='Home' component={Home} options={{ title: 'Inicio' }} />
+            <Stack.Screen name='Register' component={Register} options={{ title: 'Registrarse' }} />
             <Stack.Screen name='UserTabs' component={TabNavigator} />
 
         </Stack.Navigator>
