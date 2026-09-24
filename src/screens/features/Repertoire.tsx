@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Alert, Linking,KeyboardAvoidingView,Platform, ScrollView } from 'react-native';
 import { useAppTheme } from '../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import CustomInput from '../../components/CustomInput';
@@ -9,7 +9,8 @@ import { RootState, AppDispatch } from '../../store';
 import { addSong, removeSong, loadSavedSongs, SongItem } from '../../store/slices/repertoireSlice';
 import * as DocumentPicker from 'expo-document-picker';
 import * as IntentLauncher from 'expo-intent-launcher';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 
 export default function Repertoire() {
   const { theme } = useAppTheme();
@@ -38,11 +39,23 @@ export default function Repertoire() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
-        setPdfUri(file.uri);
+
+        const safeFileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+        const permanentUri = `${FileSystem.documentDirectory}${safeFileName}`;
+
+        await FileSystem.copyAsync({
+          from: file.uri,
+          to: permanentUri,
+        });
+
+        setPdfUri(permanentUri);
+
         setPdfName(file.name);
       }
-    } catch {
-      Alert.alert('Error', 'No se pudo seleccionar el archivo PDF.');
+      } catch (err) {
+      console.error('Error al seleccionar y guardar PDF:', err);
+      Alert.alert('Error', 'No se pudo almacenar la partitura en el dispositivo.');
+
     }
   };
 
@@ -58,13 +71,34 @@ export default function Repertoire() {
         flags: 1,
         type: 'application/pdf',
       });
-    } catch {
+       } catch (error) {
+      console.error('Error al abrir PDF:', error);
       Alert.alert(
         'Visor no disponible',
-        'No se pudo abrir el archivo con la app de lectura de PDFs.'
+        'No se pudo abrir el archivo. Asegurese de tener una aplicación lectora de PDFs instalada.'
       );
     }
   };
+
+    const handleSharePdf = async (uri?: string) => {
+    if (!uri) return;
+    try {
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert('No compatible', 'La funcion de compartir no esta disponible en el dispositivo.');
+        return;
+      }
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: 'Compartir partitura',
+      });
+    } catch (error) {
+      console.error('Error al compartir PDF:', error);
+      Alert.alert('Error', 'No se pudo compartir el archivo seleccionado.');
+    }
+  };
+
+
 
   const handleOpenLink = async (url?: string) => {
     if (!url || !url.trim()) return;
@@ -115,6 +149,8 @@ export default function Repertoire() {
   );
 
   return (
+
+
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.headerRow}>
         <Text style={[styles.title, { color: theme.title }]}>Tu Repertorio</Text>
@@ -155,7 +191,7 @@ export default function Repertoire() {
               <Text style={[styles.composer, { color: theme.subtitle }]}>{item.composer}</Text>
 
               {item.pdfName ? (
-                <Text style={[styles.pdfBadge, { color: theme.primary }]}>
+                <Text style={[styles.pdfBadge, { color: theme.primary }]}numberOfLines={1}>
                   📄 {item.pdfName}
                 </Text>
               ) : null}
@@ -169,9 +205,20 @@ export default function Repertoire() {
 
             <View style={styles.actionsColumn}>
               {item.pdfUri ? (
-                <TouchableOpacity onPress={() => handleOpenPdf(item.pdfUri)} style={styles.actionIcon}>
+                <>
+                <TouchableOpacity onPress={() => handleOpenPdf(item.pdfUri)} style={styles.actionIcon} accessibilityLabel="Abrir PDF">
                   <Ionicons name="document-text" size={22} color={theme.primary} />
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                onPress={()=>handleSharePdf(item.pdfUri)}
+                style={styles.actionIcon}
+                accessibilityLabel='Compartir PDF'>
+
+                  <Ionicons name='share-outline' size={22} color={theme.primary} />
+                </TouchableOpacity>
+              
+              </>
               ) : null}
 
               {item.tutorialUrl ? (
@@ -189,63 +236,72 @@ export default function Repertoire() {
       />
 
       <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setIsModalVisible(false)}
+  visible={isModalVisible}
+  animationType="slide"
+  transparent={true}
+  onRequestClose={() => setIsModalVisible(false)}
+>
+  <KeyboardAvoidingView
+    style={styles.modalOverlay}
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+  >
+    <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 10 }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.title }]}>Añadir al Repertorio</Text>
-              <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Ionicons name="close-circle" size={26} color={theme.error} />
-              </TouchableOpacity>
-            </View>
-
-            <CustomInput
-              values={title}
-              placeholder="Título de la obra (ej. Gavotte)"
-              OnChangeText={setTitle}
-              hideicon={true}
-            />
-
-            <CustomInput
-              values={composer}
-              placeholder="Compositor (ej. F.J. Gossec)"
-              OnChangeText={setComposer}
-              hideicon={true}
-            />
-
-            <CustomInput
-              values={tutorialUrl}
-              placeholder="Enlace web o YouTube (https://...)"
-              OnChangeText={setTutorialUrl}
-              hideicon={true}
-            />
-
-            <TouchableOpacity
-              onPress={handlePickPdf}
-              style={[styles.pdfPickerBtn, { borderColor: theme.border, backgroundColor: theme.background }]}
-            >
-              <Ionicons name="document-attach-outline" size={22} color={theme.primary} />
-              <Text style={[styles.pdfPickerText, { color: theme.title }]} numberOfLines={1}>
-                {pdfName ? `Adjunto: ${pdfName}` : 'Seleccionar Partitura (PDF)'}
-              </Text>
-            </TouchableOpacity>
-
-            <CustomInput
-              values={notes}
-              placeholder="Apuntes o digitación..."
-              OnChangeText={setNotes}
-              hideicon={true}
-              multiline={true}
-            />
-
-            <CustomButton title="Guardar Obra" icon="save-outline" onPress={handleCreateSong} />
-          </View>
+        <View style={styles.modalHeader}>
+          <Text style={[styles.modalTitle, { color: theme.title }]}>Añadir al Repertorio</Text>
+          <TouchableOpacity onPress={() => setIsModalVisible(false)}>
+            <Ionicons name="close-circle" size={26} color={theme.error} />
+          </TouchableOpacity>
         </View>
-      </Modal>
+
+        <CustomInput
+          values={title}
+          placeholder="Título de la obra (ej. Gavotte)"
+          OnChangeText={setTitle}
+          hideicon={true}
+        />
+
+        <CustomInput
+          values={composer}
+          placeholder="Compositor ( A. Vivaldi)"
+          OnChangeText={setComposer}
+          hideicon={true}
+        />
+
+        <CustomInput
+          values={tutorialUrl}
+          placeholder="Enlace web o YouTube (https://...)"
+          OnChangeText={setTutorialUrl}
+          hideicon={true}
+        />
+
+        <TouchableOpacity
+          onPress={handlePickPdf}
+          style={[styles.pdfPickerBtn, { borderColor: theme.border, backgroundColor: theme.background }]}
+        >
+          <Ionicons name="document-attach-outline" size={22} color={theme.primary} />
+          <Text style={[styles.pdfPickerText, { color: theme.title }]} numberOfLines={1}>
+            {pdfName ? `Adjunto: ${pdfName}` : 'Seleccionar Partitura (PDF)'}
+          </Text>
+        </TouchableOpacity>
+
+        <CustomInput
+          values={notes}
+          placeholder="Apuntes o Tono de la cancion..."
+          OnChangeText={setNotes}
+          hideicon={true}
+          multiline={true}
+        />
+
+        <CustomButton title="Guardar Obra" icon="save-outline" onPress={handleCreateSong} />
+      </ScrollView>
+    </View>
+  </KeyboardAvoidingView>
+</Modal>
     </View>
   );
 }
@@ -315,22 +371,23 @@ const styles = StyleSheet.create({
   actionsColumn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   actionIcon: {
     padding: 4,
   },
   modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    padding: 20,
+   flex: 1,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  justifyContent: 'center',
+  paddingHorizontal: 20,
+  paddingVertical: 40,
   },
   modalContent: {
     borderRadius: 16,
     borderWidth: 1,
-    padding: 20,
-    gap: 6,
+    padding: 18,
+    maxHeight:'85%',
   },
   modalHeader: {
     flexDirection: 'row',

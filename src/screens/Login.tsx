@@ -77,14 +77,15 @@ export default function Login({ navigation }: any) {
                         values={email}
                         placeholder="Correo Electrónico"
                         OnChangeText={setEmail}
-                        hideicon={true}
+                        hideicon={false}
                     />
 
                     <CustomInput
                         values={password}
                         placeholder="Contraseña"
                         OnChangeText={setPassword}
-                        hideicon={true}
+                        type="password"
+                        hideicon={false}
                         secureTextEntry={true}
                     />
 

@@ -7,8 +7,8 @@ import { supabase } from './../lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Register({ navigation }: any) {
-const { theme } = useAppTheme();
-  
+  const { theme } = useAppTheme();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -54,14 +54,14 @@ const { theme } = useAppTheme();
     setLoading(false);
     navigation.navigate('Login');
   };
-return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1, backgroundColor: theme.background }} 
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: theme.background }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity 
-          style={styles.backButton} 
+        <TouchableOpacity
+          style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={28} color={theme.title} />
@@ -77,14 +77,15 @@ return (
             values={email}
             placeholder="Correo Electronico"
             OnChangeText={setEmail}
-            hideicon={true}
+            hideicon={false}
           />
-          
+
           <CustomInput
             values={password}
             placeholder="Contraseña"
             OnChangeText={setPassword}
-            hideicon={true}
+            type="password"
+            hideicon={false}
             secureTextEntry={true}
           />
 
@@ -92,7 +93,8 @@ return (
             values={confirmPassword}
             placeholder="Confirmar Contraseña"
             OnChangeText={setConfirmPassword}
-            hideicon={true}
+            type="password"
+            hideicon={false}
             secureTextEntry={true}
           />
 
@@ -100,9 +102,9 @@ return (
             {loading ? (
               <ActivityIndicator size="large" color={theme.primary} />
             ) : (
-              <CustomButton 
-                title="Registrarse" 
-                onPress={handleRegister} 
+              <CustomButton
+                title="Registrarse"
+                onPress={handleRegister}
               />
             )}
           </View>
