@@ -7,6 +7,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../store';
 import { updateProfile, logoutUser } from '../../.././store/slices/userSlice';
 import {clearInventory} from '../../../store/slices/stringsSlice'
+import { supabase } from '../../../lib/supabase';
 
 export default function Profile({ navigation }: any) {
   const { theme, mode, toggleTheme } = useAppTheme();
@@ -35,7 +36,8 @@ export default function Profile({ navigation }: any) {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     dispatch(logoutUser());
     dispatch(clearInventory());
 
